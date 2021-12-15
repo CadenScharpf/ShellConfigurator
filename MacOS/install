@@ -1,0 +1,16 @@
+#!/bin/zsh
+
+ROOT="$HOME/.config"
+
+# REMOVE EXISTING CONFIGURATION
+if [ -d "$ROOT" ] 
+then
+	rm -r $ROOT
+fi
+
+# INITIALIZE CONFIG FOLDER
+mkdir $ROOT
+cp -R Prompt $ROOT/Prompt
+cp .zshrc $ROOT/.zshrc
+export PROFILE="$ROOT/.zshrc"
+. $PROFILE
