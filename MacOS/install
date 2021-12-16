@@ -1,12 +1,33 @@
 #!/bin/zsh
 
+# --------------
+# CONFIGURATION
+# --------------
+
+# FONTS TO BE INSTALLED: REQUIRED_FONTS[FILENAME]=URL(ZIP DL)
+declare -A required_fonts
+required_fonts["Caskaydia Cove Nerd Font Complete.ttf"]="https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/CascadiaCode.zip"
+required_fonts["Caskaydia Cove Nerd Font Complete Mono.ttf"]="https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/CascadiaCode.zip"
+required_fonts["JetBrains Mono Bold Italic Nerd Font Complete Mono.ttf"]="https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/JetBrainsMono.zip"
+required_fonts["bad url.ttf"]="https://github.com/ryanoasis/nerd-fonts/rel"
+required_fonts["unresolvable.ttf"]="https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/JetBrainsMono.zip"
+
+# ---------
+# VARIABLES
+# ---------
+# Directories
 ROOT="$HOME/.config"
+FONT_d="$HOME/Library/Fonts"
+BUFFER_d="$HOME/24HourBuffer"
+# Files
 PROF="$HOME/.zshrc"
 
+# -----------------------------
 # REMOVE EXISTING CONFIGURATION
-if [ -d "$ROOT" ] 
+# -----------------------------
+if [ -d "$ROOT" ]
 then
-	rm -r $ROOT
+        rm -r $ROOT
 fi
 
 if [ -d "$PROF" ]
@@ -14,9 +35,82 @@ then
         rm $PROF
 fi
 
+# ------------------------
 # INITIALIZE CONFIG FOLDER
+# ------------------------
 mkdir $ROOT
 cp -R Prompt $ROOT/Prompt
 cp .zshrc $HOME/.zshrc
 export PROFILE="$HOME/.zshrc"
 . $PROFILE
+
+# --------------------
+# INSTALL DEPENDENCIES
+# --------------------
+
+# HOMEBREW
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# WGET
+brew install wget
+
+# --------------
+# INSTALL FONTS
+# --------------
+# INSTALER FUNCTION
+install_file()
+{
+	fn=$1
+	url=$2
+	filename=$(echo $fn | tr -d '"')
+        fnlen=${#filename}
+        fontname=${filename:0:(fnlen-4)}
+        if [ ! -f "$FONT_d/$filename" ]
+        then
+		pushd $BUFFER_d
+                wget --output-document font.zip $url 2>/dev/null;
+
+		# VERIFY DL SUCCESS
+		if [ ! -s font.zip ]
+		then
+			echo -e "$fontname \e[91m[BAD URL]\e[0m"
+			rm font.zip
+			popd
+			return 0
+		fi
+
+		# VERIFY DL CONTAINS FONT
+		search=$(unzip -l font.zip | grep "$filename")
+		if [[ "$search" == "" ]];
+                then
+                        echo -e "$fontname\e[91m[UNRESOLVABLE]\e[0m"
+			rm font.zip
+			popd
+			return 0
+                else
+                        unzip -p font.zp $filename > $FONT_d/$filename
+			echo -e "$fontname\e[92m[SUCCESS]\e[0m"
+			rm font.zip
+			popd
+			return 1
+                fi
+        else
+                echo -e "$fontname\e[92m[SATISFIED]\e[0m"
+		return 1
+	fi
+}
+
+# -------------------
+# BEGIN INSTALLATION
+# -------------------
+echo "\e[1mInstalling fonts...\e[0m"
+for fn url in "${(@kv)required_fonts}"
+do
+	install_file $fn $url
+done
+
+# OH-MY-POSH
+brew tap jandedobbeleer/oh-my-posh
+brew install oh-my-posh
+
+
